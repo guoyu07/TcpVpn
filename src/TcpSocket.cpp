@@ -7,6 +7,7 @@
 #include <netdb.h>
 #include <cstring>
 #include <glog/logging.h>
+#include <iostream>
 #include "TcpSocket.h"
 
 int get_ipinfo(std::string host_s, int port, sockaddr *addr, socklen_t *addrlen) {
@@ -65,17 +66,25 @@ int TcpSocket::connect_addr(std::string host, int port) {
 
 int TcpSocket::recv_package(unsigned char *recv_buf) {
     int more = recv(sock, buf, 1500, 0);
+    for (int g = 0;g < pos;g++) {
+        std::cout << buf[g] << " ";
+    }
+    std::cout << "\n";
+    LOG(INFO) << "recv " << more;
     if (more <= 0) {
         alive = false;
         return -1;
     }
     memcpy(sock_buf + pos, buf, more);
+    pos += more;
     if (pos < PACKAGE_HEADER_SIZE) {
+        LOG(INFO) << "need " << pos - PACKAGE_HEADER_SIZE;
         return 0;
     }
     TcpPackageHeader *header = (TcpPackageHeader*)sock_buf;
     int package_len = header->len;
     if (package_len > pos + PACKAGE_HEADER_SIZE) {
+        LOG(INFO) << "need " << pos - package_len;
         return 0;
     }
     memcpy(recv_buf, sock_buf + PACKAGE_HEADER_SIZE, package_len);
@@ -98,8 +107,8 @@ int TcpSocket::recv_package(unsigned char *recv_buf) {
     return package_len;
 }
 
-int TcpSocket::send_package(unsigned char *buf, int size) {
-    memcpy(send_buf + PACKAGE_HEADER_SIZE, buf, size);
+int TcpSocket::send_package(unsigned char *_buf, int size) {
+    memcpy(send_buf + PACKAGE_HEADER_SIZE, _buf, size);
     TcpPackageHeader *header = (TcpPackageHeader*)send_buf;
     header->len = size;
     return send(sock, send_buf, size + PACKAGE_HEADER_SIZE, 0);
