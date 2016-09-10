@@ -66,10 +66,6 @@ int TcpSocket::connect_addr(std::string host, int port) {
 
 int TcpSocket::recv_package(unsigned char *recv_buf) {
     int more = recv(sock, buf, 1500, 0);
-    for (int g = 0;g < pos;g++) {
-        std::cout << buf[g] << " ";
-    }
-    std::cout << "\n";
     LOG(INFO) << "recv " << more;
     if (more <= 0) {
         alive = false;
