@@ -137,7 +137,7 @@ char* TcpSocket::fetch_buf() {
         return NULL;
     }
     char* return_buf = sock_buf + buffer_start;
-    buffer_start += header->len;
+    buffer_start += header->len + PACKAGE_HEADER_SIZE;
     buffer_len -= header->len + PACKAGE_HEADER_SIZE;
     return return_buf;
 }
