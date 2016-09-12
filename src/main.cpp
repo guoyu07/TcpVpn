@@ -8,9 +8,9 @@ using namespace std;
 
 SharpVpn *vpn;
 #ifndef TARGET_WIN32
-static void sig_handler(int signo) {
-    vpn->stop();
-}
+//static void sig_handler(int signo) {
+//    vpn->stop();
+//}
 #endif
 
 int main(int argc, char **args) {
@@ -70,8 +70,8 @@ int main(int argc, char **args) {
         runtime.start();
     }
 #ifndef TARGET_WIN32
-    signal(SIGINT, sig_handler);
-    signal(SIGTERM, sig_handler);
+//    signal(SIGINT, sig_handler);
+//    signal(SIGTERM, sig_handler);
 #endif
     vpn->run();
     return 0;

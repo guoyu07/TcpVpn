@@ -306,9 +306,6 @@ int SharpVpn::refresh_args_file(VpnArgs args, std::string file) {
 }
 
 int SharpVpn::stop() {
-    if (!running) {
-        return 0;
-    }
     this->running = false;
 #ifndef TARGET_WIN32
     std::stringstream ss;
