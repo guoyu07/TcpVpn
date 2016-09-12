@@ -3,6 +3,7 @@
 //
 
 #include <sys/socket.h>
+#include <netinet/tcp.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <cstring>
@@ -40,7 +41,12 @@ int get_ipinfo(std::string host_s, int port, sockaddr *addr, socklen_t *addrlen)
 
 
 TcpSocket::TcpSocket() {
+    int flag = 1;
     sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    int r = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (unsigned char*)&flag, sizeof(int));
+    if (r) {
+        LOG(INFO) << "set TCP_NODELAY fail";
+    }
 }
 
 int TcpSocket::bind_addr(std::string host, int port) {
