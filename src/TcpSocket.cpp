@@ -71,14 +71,18 @@ int TcpSocket::connect_addr(std::string host, int port) {
 }
 
 int TcpSocket::recv_package(unsigned char *recv_buf) {
-    char *recv_buffer = fetch_buf();
-    if (recv_buffer == NULL) {
-        int more = recv(sock, alloc_buf(), 1500, 0);
-        if (more >= 0) {
-            buffer_len += more;
-            return 0;
-        } else {
-            return -1;
+    char *recv_buffer = NULL;
+    int more = 0;
+    while (recv_buffer == NULL) {
+        recv_buffer = fetch_buf();
+        if (recv_buffer == NULL) {
+            more = recv(sock, alloc_buf(), 1500, 0);
+            if (more >= 0) {
+                buffer_len += more;
+                continue;
+            } else {
+                return -1;
+            }
         }
     }
     TcpPackageHeader *header = (TcpPackageHeader*)recv_buffer;
