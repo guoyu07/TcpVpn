@@ -71,42 +71,19 @@ int TcpSocket::connect_addr(std::string host, int port) {
 }
 
 int TcpSocket::recv_package(unsigned char *recv_buf) {
-    int more = recv(sock, buf, 1500, 0);
-    LOG(INFO) << "recv " << more;
-    if (more <= 0) {
-        alive = false;
-        return -1;
-    }
-    memcpy(sock_buf + pos, buf, more);
-    pos += more;
-    if (pos < PACKAGE_HEADER_SIZE) {
-        LOG(INFO) << "need " << pos - PACKAGE_HEADER_SIZE;
-        return 0;
-    }
-    TcpPackageHeader *header = (TcpPackageHeader*)sock_buf;
-    int package_len = header->len;
-    if (package_len > pos + PACKAGE_HEADER_SIZE) {
-        LOG(INFO) << "need " << pos - package_len;
-        return 0;
-    }
-    memcpy(recv_buf, sock_buf + PACKAGE_HEADER_SIZE, package_len);
-    if (pos == package_len + PACKAGE_HEADER_SIZE) {
-        pos = 0;
-        sock_buf = backup_a;
-    } else {
-        if (sock_buf == backup_a) {
-            memcpy(backup_b, sock_buf + package_len + PACKAGE_HEADER_SIZE,
-            pos - package_len - PACKAGE_HEADER_SIZE);
-            sock_buf = backup_b;
-            pos -= package_len + PACKAGE_HEADER_SIZE;
-        } else if (sock_buf == backup_b) {
-            memcpy(backup_a, sock_buf + package_len + PACKAGE_HEADER_SIZE,
-                   pos - package_len - PACKAGE_HEADER_SIZE);
-            sock_buf = backup_a;
-            pos -= package_len + PACKAGE_HEADER_SIZE;
+    char *recv_buffer = fetch_buf();
+    if (recv_buffer == NULL) {
+        int more = recv(sock, alloc_buf(), 1500, 0);
+        if (more >= 0) {
+            buffer_len += more;
+            return 0;
+        } else {
+            return -1;
         }
     }
-    return package_len;
+    TcpPackageHeader *header = (TcpPackageHeader*)recv_buffer;
+    memcpy(recv_buf, recv_buffer + PACKAGE_HEADER_SIZE, header->len);
+    return  header->len;
 }
 
 int TcpSocket::send_package(unsigned char *_buf, int size) {
@@ -138,4 +115,29 @@ void TcpSocket::close_addr() {
 
 void TcpSocket::listen_addr() {
     listen(sock, MAX_BACKLOG);
+}
+
+char* TcpSocket::alloc_buf() {
+    if (buffer_len == 0) {
+        buffer_start = 0;
+        return sock_buf;
+    }
+    if (BUF_LEN - buffer_start - buffer_len < 1500) {
+        memcpy(sock_buf, sock_buf + buffer_start, buffer_len);
+    }
+    return sock_buf + buffer_start + buffer_len;
+}
+
+char* TcpSocket::fetch_buf() {
+    if (buffer_len < PACKAGE_HEADER_SIZE) {
+        return NULL;
+    }
+    TcpPackageHeader *header = (TcpPackageHeader*)(sock_buf + buffer_start);
+    if (buffer_len < header->len + PACKAGE_HEADER_SIZE) {
+        return NULL;
+    }
+    char* return_buf = sock_buf + buffer_start;
+    buffer_start += header->len;
+    buffer_len -= header->len + PACKAGE_HEADER_SIZE;
+    return return_buf;
 }

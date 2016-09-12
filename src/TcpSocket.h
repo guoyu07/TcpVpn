@@ -16,17 +16,23 @@ typedef struct TcpPackageHeader {
 #define EOP '*'
 #define PACKAGE_HEADER_SIZE sizeof(TcpPackageHeader)
 #define MAX_BACKLOG 30
+#define BUF_LEN 100000
 class TcpSocket {
 private:
     int sock;
-    char buf[1500];
-    char backup_a[100000];
-    char backup_b[100000];
-    char send_buf[150000];
-    char *sock_buf = backup_a;
-    int pos = 0;
     bool alive = true;
+
+    char send_buf[100000];
+
     TcpSocket(int __sock);
+
+    char sock_buf[BUF_LEN];
+    int buffer_len = 0;
+    int buffer_start = 0;
+    //fetch a recv_buf, return NULL if there is not any
+    char* fetch_buf();
+    //allocate a buf for recv
+    char* alloc_buf();
 public:
     TcpSocket();
     int bind_addr(std::string host, int port);
